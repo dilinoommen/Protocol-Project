@@ -1,0 +1,322 @@
+PARSER_BEGIN(avengers)
+
+   import java.io.*;
+
+   class avengers {
+
+      public static void main(String[] args)
+         throws ParseException, TokenMgrError
+      {
+         if (args.length > 0) {
+	    try{
+		avengers scan = new avengers(new FileInputStream(args[0]));
+		scan.Program().eval();
+	    } catch (FileNotFoundException ex) {
+	       System.out.println("File "+args[0]+" not found.");
+	    }
+	 } else {
+	    System.out.println("Must specify source code file name.");
+	 }
+      }
+	
+   } // end class
+
+PARSER_END(avengers)
+
+SKIP : { " " | "\t" | "\n" }
+TOKEN : { <INPUT : "IronMan intercepts a"> }
+TOKEN : { <ASSIGN : "completes"> }
+TOKEN : { <LP : "(" > }
+TOKEN : { <RP : ")" > }
+TOKEN : { <INT : ("0" | ["1"-"9"](["0"-"9"])*)> }
+TOKEN : { <AT : "@" > }
+TOKEN : { <OUTPUT : "Jarvis" > }
+TOKEN : { <ID : (["a"-"z"])+> }
+TOKEN : { <ADD : "+"> }
+TOKEN : { <SUB : "-"> }
+TOKEN : { <MULT : "*"> }
+TOKEN : { <DIV : "/"> }
+TOKEN : { <LESS : "<"> }
+TOKEN : { <GREATER : ">"> }
+TOKEN : { <LESSEQ : "<="> }
+TOKEN : { <GREATEREQ : ">="> }
+TOKEN : { <EQUAL : "=="> }
+TOKEN : { <NOTEQUAL : "!="> }
+TOKEN : { <LB : "["> }
+TOKEN : { <RB : "]"> }
+TOKEN : { <IF : "Avengers"> }
+TOKEN : { <ELSE : "Revengers"> }
+TOKEN : { <WHILE : "Groundhogday"> }
+
+Node Assign():
+{
+	Node n;
+	Token t;
+	Node e;
+}
+{
+	{ n = new AssignNode(); }
+	t = <ID> {n.addChild(new IDNode(t.image));}
+	<ASSIGN>
+		e=Exp(){
+			n.addChild(e);
+		}
+	<AT>
+	{ return n; }
+}
+
+Node Program():
+{
+	Node n;
+	Node e;
+}
+{
+	{ n = new BlockNode(); }
+	(
+		e = Input()	{ n.addChild(e); }
+		|
+		e = Output()	{ n.addChild(e); }
+		|
+		e= Assign()	{ n.addChild(e); }
+		|
+		e=If()		{ n.addChild(e); }
+		|
+		e=Loop()	{ n.addChild(e); }
+	)+
+	<EOF>
+	{ return n; }
+}
+
+Node Input():
+{
+
+	Node n;
+	Token t;
+}
+{
+	{ n = new InputNode(); }
+	<INPUT>	
+	t=<ID>	{ n.addChild(new IDNode(t.image)); }
+
+	<AT>
+	{ return n; }
+}
+
+
+Node Output():
+{
+	Node n;
+	Node e;
+}
+{
+	{ n = new OutputNode(); }
+	<OUTPUT>
+		e=Exp(){
+			n.addChild(e);
+		}
+	<AT>
+	{ return n; }
+}
+
+Node Exp():
+{
+	Node n;
+	Token t;
+	Node e;
+}
+{
+	{n= new ExpNode();}
+	e=Mexp(){n.addChild(e);}
+	(
+	t=<ADD>
+	e=Mexp(){n.addChild(new OpNode(t.image));
+		 n.addChild(e);}
+	|
+	t=<SUB>
+	e=Mexp(){n.addChild (new OpNode(t.image)); 
+		n.addChild(e);}
+	)*
+	{return n;}
+}
+Node Mexp():
+{
+	Node n;
+	Token t;
+	Node e;
+}
+{
+	{n=new ExpNode();}
+	e=factor() {n.addChild(e);
+		}
+	(
+	t=<MULT>
+	e=factor(){n.addChild(new OpNode(t.image)); 
+		n.addChild(e);
+	}
+	|
+	t=<DIV>
+	e=factor() {n.addChild(new OpNode(t.image));
+		n.addChild(e);
+	}
+	)*
+	{return n;}
+}
+Node factor():
+{
+	Node e;
+	Token t;
+}
+{
+	(
+	t=<ID>{return new IDNode(t.image);}
+	|
+	t=<INT>{
+		return new INTNode(t.image);
+	}
+	|
+	(
+		<LP>
+		e=Exp()
+		<RP>
+	)
+	)
+	{
+	return e;
+	}
+}
+Node Loop():
+{
+	Node n;
+	Node e;
+}
+{
+	{
+		n=new LoopNode();
+	}
+	<WHILE>
+	<LP>
+	e=Relation(){
+			n.addChild(e);
+		}
+	<RP>
+	e=Block(){
+			n.addChild(e);
+		}
+	{return n;}
+}
+Node Relation():
+{
+	Node n;
+	Node e;
+}
+{
+	{
+		n=new RelNode();
+	}
+	(
+	e=Exp(){
+		n.addChild(e);
+		}
+	e=Relop(){
+		n.addChild(e);
+		}
+	e=Exp(){
+		n.addChild(e);
+		}
+	)
+	{return e;}
+}
+
+Node Relop():
+{
+	Token t;
+	Node n;
+}
+{
+	{
+		n=null;
+	}
+	(
+	t=<LESS>{
+			n=new OpNode(t.image);
+		}
+	|
+	t=<GREATER>{
+                        n=new OpNode(t.image);
+                }
+        |
+ 	t=<LESSEQ>{
+                        n=new OpNode(t.image);
+                }
+        |
+	t=<GREATEREQ>{
+                        n=new OpNode(t.image);
+                }
+        |
+	t=<EQUAL>{
+                        n=new OpNode(t.image);
+                }
+        |
+	t=<NOTEQUAL>{
+                        n=new OpNode(t.image);
+                }
+        )
+	{return n;}
+}
+
+Node Block():
+{
+	Node n;
+	Node e;
+}
+{
+	{
+		n=new BlockNode();
+	}
+	<LB>
+	(
+	e=Input(){
+		n.addChild(e);
+		}
+	|
+	e=Output(){
+		n.addChild(e);
+		}
+	|
+	e=Assign(){
+		n.addChild(e);
+		}
+	|
+	e=Loop(){
+		n.addChild(e);
+		}
+	)+
+	<RB>
+	{return n;}
+}
+Node If():
+{
+	Node n;
+	Node e;
+}
+{
+	{
+		n= new IfElseNode();
+	}
+	<IF>
+	<LP>
+	e=Relation(){
+			n.addChild(e);
+		}
+	<RP>
+	e=Block(){
+			n.addChild(e);
+		}
+	(
+	<ELSE>
+	e=Block(){
+			n.addChild(e);
+	}
+	)?
+	{return n;}
+}

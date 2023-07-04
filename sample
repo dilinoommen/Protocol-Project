@@ -1,0 +1,30 @@
+x completes 25@
+Jarvis x@
+Avengers(x == 25)[
+	x completes x + 1@
+]
+
+Jarvis x@
+
+y completes 36@
+Avengers(y != 36)[
+	y completes y-1@
+]
+Revengers[
+	y completes y+1@
+]
+Jarvis y@
+
+z completes 13@
+Groundhogday(z < 10)[
+	Jarvis z@
+	z completes z + 1@
+]
+
+a completes 4@
+Avengers(a > 0)[
+	Jarvis a@
+	a completes a - 6@
+	Jarvis a@
+]
+
